@@ -1,1 +1,154 @@
-# KAK-DEYTI
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Love</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Asap&display=swap">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      background: pink;
+      overscroll-behavior-x: none;
+      overscroll-behavior-y: none;
+    }
+    body {
+      font-family: "Asap", sans-serif;
+      position: relative;
+      width: 100vw;
+      min-height: 100vh;
+      text-align: center;
+      overflow-x: hidden;
+      color: white;
+      font-size: 8.0rem;
+    }
+    canvas {
+      user-select: none;
+      pointer-events: none;
+      position: fixed;
+      width: 100vw;
+      height: 100vh;
+      top: 0;
+      left: 0;
+    }
+    h2 {
+      position: relative;
+      color: rgb(255, 253, 254);
+    }
+    section {
+      position: relative;
+      width: 100vw;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <section>
+      <div>
+        <canvas id="canvas"></canvas>
+        <h2>I love you</h2>
+      </div>
+    </section>
+  </main>
+
+  <script async src="https://ga.jspm.io/npm:es-module-shims@1.6.3/dist/es-module-shims.js" crossorigin="anonymous"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.154.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.154.0/examples/jsm/",
+        "three-mesh-bvh": "https://unpkg.com/three-mesh-bvh@0.6.0/build/index.module.js",
+        "three-bvh-csg": "https://unpkg.com/three-bvh-csg@0.0.7/build/index.module.js"
+      }
+    }
+  </script>
+  
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
+    import { SUBTRACTION, Brush, Evaluator } from "three-bvh-csg";
+    
+    let scene, camera, renderer, controls, material, heartMesh;
+    const heartInstances = 700;
+    const sceneSize = 50;
+    
+    function init() {
+      scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0xffc0cb, 0.005);
+      
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      
+      camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, sceneSize * 3);
+      camera.position.set(0, 0, sceneSize * Math.sqrt(2));
+      
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+      scene.add(ambientLight);
+      
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+      directionalLight.position.set(0, sceneSize * 2, 0);
+      scene.add(directionalLight);
+      
+      material = new THREE.MeshStandardMaterial({ metalness: 1, roughness: 0, color: "deeppink" });
+      const geometry = new THREE.SphereGeometry(0.3, 20, 10);
+      heartMesh = new THREE.InstancedMesh(geometry, material, heartInstances);
+      
+      const tempMatrix = new THREE.Matrix4();
+      for (let i = 0; i < heartInstances; i++) {
+        randomizeMatrix(tempMatrix);
+        heartMesh.setMatrixAt(i, tempMatrix);
+      }
+      scene.add(heartMesh);
+      
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.autoRotate = true;
+      controls.enableDamping = true;
+      controls.enablePan = false;
+      controls.minDistance = 0.1;
+      controls.maxDistance = sceneSize * Math.sqrt(2);
+      controls.update();
+      
+      window.addEventListener("resize", onWindowResize);
+      animate();
+    }
+    
+    function randomizeMatrix(matrix) {
+      const position = new THREE.Vector3(
+        (Math.random() * 2 - 1) * sceneSize,
+        (Math.random() * 2 - 1) * sceneSize,
+        (Math.random() * 2 - 1) * sceneSize
+      );
+      
+      const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.random() * Math.PI * 2, Math.random() * Math.PI * 2));
+      matrix.compose(position, rotation, new THREE.Vector3(1, 1, 1));
+    }
+    
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    
+    init();
+  </script>
+</body>
+
+</html>
